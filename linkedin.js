@@ -1,10 +1,22 @@
-const tough = require('tough-cookie');
-const fetch = require('node-fetch');
 const querystring = require('querystring');
+const client = require('unofficial-linkedin-api');
+const request_promise = require('request-promise-native');
+const jar = require('unofficial-linkedin-api/src/utils/cookieJar');
+const cookieJar = jar.getCookieJar();
+const request = request_promise.defaults({ jar: cookieJar });
+
 
 const credentials = {
   user: '',
   password: '',
+};
+
+const AUTH_REQUEST_HEADERS = {
+  'X-Li-User-Agent': 'LIAuthLibrary:3.2.4 com.linkedin.LinkedIn:8.8.1 iPhone:8.3',
+  'User-Agent': 'LinkedIn/8.8.1 CFNetwork/711.3.18 Darwin/14.0.0',
+  'X-User-Language': 'en',
+  'X-User-Locale': 'en_US',
+  'Accept-Language': 'en-us',
 };
 
 const AUTH_URL = 'https://www.linkedin.com/uas/authenticate';
@@ -13,22 +25,32 @@ const BASE_URL = 'https://www.linkedin.com/voyager/api';
 class Linkedin {
 	constructor() {
     this.user = credentials.user;
-    this.jar = new tough.CookieJar(undefined, {
-        rejectPublicSuffixes: false,
-    });
+    this.jar = cookieJar;
     this.initializeToken();
   }
 
   async initializeToken() {
-    const response = await this.getToken(credentials.user, credentials.password);//this.client.login(credentials.user, credentials.password);
+    /* await sleep(30000);
+    let response = await request(
+      {
+        uri: AUTH_URL,
+        method: 'GET',
+        json: true,
+        headers: AUTH_REQUEST_HEADERS,
+      }
+    );
+    console.log('response', response);
+    await sleep(randomBetween3and5);
+    response = await this.getToken(credentials.user, credentials.password); */
+    const response = await client.login(credentials.user, credentials.password);
     console.log('response', response);
   }
 
-  _getSessionCookie(voyager = false) {
+  _getSessionCookie(uri = AUTH_URL, voyager = false) {
     if (!this.jar) {
       return '';
     }
-    const cookieString = ';=';//this.jar.getCookieString(AUTH_URL);
+    const cookieString = this.jar.getCookieString(uri);
     if (voyager) {
         return `${cookieString.split(';')[0].split('=')[1].replace(/"/g, '')}`;
     } 
@@ -57,27 +79,21 @@ class Linkedin {
   }
 
   async getToken(user, password) {
-    const body = {
-      'session_key': user,
-      'session_password': password,
-      'JSESSIONID': this._getSessionCookie(),
-    };
     try {
-      const result = await fetch(
-        AUTH_URL,
+      const result = await request(
         {
+          uri: AUTH_URL,
           method: 'POST',
-          body: JSON.stringify(body),
-          headers: {
-            'X-Li-User-Agent': 'LIAuthLibrary:3.2.4 com.linkedin.LinkedIn:8.8.1 iPhone:8.3',
-            'User-Agent': 'LinkedIn/8.8.1 CFNetwork/711.3.18 Darwin/14.0.0',
-            'X-User-Language': 'en',
-            'X-User-Locale': 'en_US',
-            'Accept-Language': 'en-us',
+          body: {
+            'session_key': user,
+            'session_password': password,
+            'JSESSIONID': this._getSessionCookie(AUTH_URL),
           },
+          json: true,
+          headers: AUTH_REQUEST_HEADERS,
         }
       );
-      this.token = this._getSessionCookie(true);
+      this.token = await this._getSessionCookie(AUTH_URL, true);
       return result;
     } catch (error) {
       console.log('Access Token Error', error.message);
@@ -87,19 +103,20 @@ class Linkedin {
 
   async getProfile() {
     const identifier = '';
-    const res = await fetch(
-      `${BASE_URL}/identity/profiles/${identifier}/profileView`,
+    /* const res = await request(
       {
+        uri: `${BASE_URL}/identity/profiles/${identifier}/profileView`,
         headers: this._getRequestHeaders(),
       }
-    );
-    return res.json();
+    ); */
+    const response = await client.getProfileById(identifier);
+    return response;
   }
 
   async getContacts() {
-    const res = await fetch(
-      `${BASE_URL}/clientAwareMemberHandles?q=members&projection=(elements*(primary,type,handle~))`,
+    const res = await request(
       {
+        uri: `${BASE_URL}/clientAwareMemberHandles?q=members&projection=(elements*(primary,type,handle~))`,
         headers: {
           'Authorization': `Bearer ${this.accessToken}`,
         },
@@ -109,9 +126,9 @@ class Linkedin {
   }
   
   async getCompanies() {
-    const res = await fetch(
-      `${BASE_URL}/organizationalEntityAcls?q=roleAssignee&role=ADMINISTRATOR&state=APPROVED&start=0&count=10&projection=(elements*(organizationalTarget~(id,localizedName,logoV2(original~:playableStreams))))`,
+    const res = await request(
       {
+        uri: `${BASE_URL}/organizationalEntityAcls?q=roleAssignee&role=ADMINISTRATOR&state=APPROVED&start=0&count=10&projection=(elements*(organizationalTarget~(id,localizedName,logoV2(original~:playableStreams))))`,
         headers: this._getRequestHeaders(),
       }
     )
@@ -141,9 +158,9 @@ class Linkedin {
   }
 
   async getOrganizations(query) {
-    const res = await fetch(
-      `${BASE_URL}/organizations?q=emailDomain&emailDomain=linkedin.com&${querystring.stringify(query)}`,
+    const res = await request(
       {
+        uri: `${BASE_URL}/organizations?q=emailDomain&emailDomain=linkedin.com&${querystring.stringify(query)}`,
         headers: {
           'Authorization': `Bearer ${this.accessToken}`,
           'X-Restli-Protocol-Version': '2.0.0',
@@ -154,9 +171,9 @@ class Linkedin {
   }
 
   async searchCompanies(query) {
-    const res = await fetch(
-      `${BASE_URL}/search?q=companiesV2&${querystring.stringify(query)}`,
+    const res = await request(
       {
+        uri: `${BASE_URL}/search?q=companiesV2&${querystring.stringify(query)}`,
         headers: {
           'Authorization': `Bearer ${this.accessToken}`,
           'X-Restli-Protocol-Version': '2.0.0',

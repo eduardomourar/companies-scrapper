@@ -6,7 +6,7 @@
   "author": "eduardomourar",
   "scripts": {
     "start": "node app.js",
-    "debug": "node --nolazy --inspect=9229 app.js"
+    "debug": "node --nolazy --inspect-brk=9229 app.js"
   },
   "engines": {
     "node": ">=10.0.0"
@@ -17,6 +17,8 @@
     "cors": "^2.8.5",
     "express": "^4.17.1",
     "node-fetch": "^2.6.0",
+    "request": "^2.88.0",
+    "request-promise-native": "^1.0.7",
     "simple-oauth2": "^2.2.1",
     "tough-cookie": "^3.0.1",
     "unofficial-linkedin-api": "^1.0.1"
