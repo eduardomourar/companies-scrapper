@@ -1,7 +1,7 @@
 {
   "name": "linkedin-api-scrapper",
   "version": "0.1.0",
-  "description": "Linkedin API for search companies",
+  "description": "Linkedin API to search companies details",
   "main": "app.js",
   "author": "eduardomourar",
   "scripts": {
@@ -12,15 +12,12 @@
     "node": ">=10.0.0"
   },
   "dependencies": {
-    "@types/node-fetch": "^2.5.0",
     "body-parser": "^1.19.0",
     "cors": "^2.8.5",
     "express": "^4.17.1",
-    "node-fetch": "^2.6.0",
     "request": "^2.88.0",
     "request-promise-native": "^1.0.7",
-    "simple-oauth2": "^2.2.1",
-    "tough-cookie": "^3.0.1",
-    "unofficial-linkedin-api": "^1.0.1"
+    "tough-cookie-file-store": "^1.2.0",
+    "unofficial-linkedin-api": "github:eduardomourar/unofficial-linkedin-api#feature/refactor-simplification"
   }
 }

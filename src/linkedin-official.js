@@ -28,12 +28,14 @@ class Linkedin {
   }
 
   async getAuth() {
-    return oauth.authorizationCode.authorizeURL({
+    return {
+      redirectUri: oauth.authorizationCode.authorizeURL({
         response_type: 'code',
         redirect_uri: this.redirectUri,
         state: 'linkedinAuthState',
         scope: this.scope,
-    });
+      })
+    };
   }
 
   async initializeToken() {
@@ -46,17 +48,6 @@ class Linkedin {
   }
 
   async getToken(code) {
-/*     const res = await fetch(
-      `https://www.linkedin.com/oauth/v2/accessToken?client_id=${this.clientId}&client_secret=${this.clientSecret}&grant_type=authorization_code&code=${code}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-      }
-    )
-    return res.json() */
-
     try {
       const result = await oauth.authorizationCode.getToken({
         code: code,
@@ -152,7 +143,7 @@ class Linkedin {
 
   async getOrganizations(query) {
     const res = await fetch(
-      `${BASE_URL}/organizations?q=emailDomain&emailDomain=linkedin.com&${querystring.stringify(query)}`,
+      `${BASE_URL}/organizations?q=emailDomain&emailDomain=linkedin.com&${querystring.encode(query)}`,
       {
         headers: {
           'Authorization': `Bearer ${this.accessToken}`,
@@ -165,7 +156,7 @@ class Linkedin {
 
   async searchCompanies(query) {
     const res = await fetch(
-      `${BASE_URL}/search?q=companiesV2&${querystring.stringify(query)}`,
+      `${BASE_URL}/search?q=companiesV2&${querystring.encode(query)}`,
       {
         headers: {
           'Authorization': `Bearer ${this.accessToken}`,
